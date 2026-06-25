@@ -1,0 +1,79 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Roboto', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+    --color-vatan-orange: #f39c12;
+    --color-vatan-orange-dark: #e67e22;
+    --color-vatan-sidebar: #1e293b;
+    --color-vatan-sidebar-dark: #0f172a;
+    --color-vatan-blue: #3498db;
+    --color-vatan-green: #27ae60;
+    --color-vatan-red: #e74c3c;
+    --color-vatan-purple: #9b59b6;
+    --color-vatan-bg: #f0f2f5;
+}
+
+/* Custom Scrollbar */
+@layer components {
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 100px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+}
+
+/*
+ * ─── Light Mode Kontrast Düzeltmesi ─────────────────────────────────────────
+ * Tailwind text-gray-400 (#9ca3af) ve text-gray-500 (#6b7280) light arka
+ * planlarda WCAG AA eşiğini geçemiyor. Aşağıdaki kurallar bu sınıfları
+ * beyaz arka plan üzerinde okunabilir değerlere çeker.
+ * Dark mode override'ları kendi dark: prefixleriyle korunuyor.
+ * ────────────────────────────────────────────────────────────────────────────
+ */
+@media (prefers-color-scheme: light) {
+    .text-gray-400 {
+        color: #6b7280 !important;
+    }
+
+    /* 400 → 500 */
+    .text-gray-500 {
+        color: #4b5563 !important;
+    }
+
+    /* 500 → 600 */
+}
+
+/* Tailwind dark class stratejisi kullananlar için (html.dark olmadan) */
+:root:not(.dark) .text-gray-400 {
+    color: #6b7280 !important;
+}
+
+:root:not(.dark) .text-gray-500 {
+    color: #4b5563 !important;
+}
+
+/* Panel genel body: hafif daha koyu taban */
+body.bg-\[#f0f2f5\] .text-gray-400 {
+    color: #6b7280 !important;
+}
+
+body.bg-\[#f0f2f5\] .text-gray-500 {
+    color: #4b5563 !important;
+}
