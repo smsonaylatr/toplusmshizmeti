@@ -79,7 +79,7 @@
                     {{-- SMS Kredi Göstergesi --}}
                     @php
                         $smsCredits    = auth()->user()->sms_credits ?? 0;
-                        $creditUrl     = url('/payment-notification');
+                        $creditUrl     = route('panel.payment.notification');
                         $creditClass   = $smsCredits <= 50
                             ? 'bg-red-500/25 text-white border border-red-400/50'
                             : 'bg-white/15 text-white border border-white/30';
