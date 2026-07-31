@@ -63,34 +63,28 @@ Route::get('/test-logs', function () {
 Route::get('/start-node', function () {
     $dir = base_path('whatsapp-server');
     
-    // Find node executable
-    $nodePath = exec('which node');
-    if (!$nodePath) {
-        // Common Plesk paths
-        $paths = ['/opt/plesk/node/20/bin/node', '/opt/plesk/node/18/bin/node', '/opt/plesk/node/16/bin/node', '/usr/bin/node', '/usr/local/bin/node'];
-        foreach ($paths as $p) {
-            if (file_exists($p)) {
-                $nodePath = $p;
-                break;
-            }
+    // Yüklü olabilecek olası node yolları
+    $paths = ['node', '/opt/plesk/node/20/bin/node', '/opt/plesk/node/18/bin/node', '/opt/plesk/node/21/bin/node', '/usr/bin/node', '/usr/local/bin/node'];
+    
+    // Zaten çalışıyor mu?
+    $isRunning = false;
+    exec("pgrep -f 'index.js'", $pids);
+    if (!empty($pids)) {
+        return "Node.js zaten çalışıyor! PID: " . implode(', ', $pids);
+    }
+
+    $output = [];
+    foreach ($paths as $nodePath) {
+        // npm install ve nohup başlatma komutu
+        $cmd = "cd $dir && $nodePath $(which npm) install; nohup $nodePath index.js > server.log 2>&1 & echo $!";
+        $pid = exec($cmd, $out, $status);
+        
+        if ($pid > 0 && is_numeric($pid)) {
+            return "<pre>HARİKA! Node.js sunucusu başarıyla başlatıldı.\nKullanılan Node: $nodePath\nPID: $pid\n\nArtık Plesk'te hiçbir ayar yapmanıza gerek yok. Gidip test mesajı atabilirsiniz!</pre>";
         }
     }
 
-    if (!$nodePath) {
-        return "Node.js sunucuda bulunamadı! Lütfen sunucu yöneticinizle görüşüp Node.js kurdurun.";
-    }
-
-    // Check if already running
-    exec("pgrep -f 'index.js'", $pids);
-    if (!empty($pids)) {
-        return "Node.js zaten çalışıyor (PID: " . implode(', ', $pids) . "). Lütfen test-queue sayfasını kontrol edin.";
-    }
-
-    // Start Node.js
-    $cmd = "cd $dir && nohup $nodePath index.js > server.log 2>&1 & echo $!";
-    $pid = exec($cmd);
-
-    return "<pre>Node.js başlatıldı! \nNode Yolu: $nodePath \nPID: $pid \n\nLütfen 5 saniye bekleyip test-queue linkine tekrar girin.</pre>";
+    return "Node.js başlatılamadı. Plesk'te Node yüklü olmayabilir.";
 });
 
 // Auth Routes
