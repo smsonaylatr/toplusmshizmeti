@@ -178,12 +178,15 @@ app.post('/message/send', async (req, res) => {
         } else if (formattedTo.length === 11 && formattedTo.startsWith('0')) {
             formattedTo = '90' + formattedTo.substring(1);
         }
-        
         const recipient = formattedTo.includes('@') ? formattedTo : `${formattedTo}@s.whatsapp.net`;
         
-        await sock.sendMessage(recipient, { text: message });
+        console.log(`Sending message to ${recipient}...`);
+        const result = await sock.sendMessage(recipient, { text: message });
+        console.log(`Message sent successfully: ${JSON.stringify(result)}`);
+        
         res.json({ success: true, message: 'Sent' });
     } catch (error) {
+        console.error('Send message error:', error);
         res.status(500).json({ error: error.message });
     }
 });
