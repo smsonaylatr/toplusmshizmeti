@@ -76,10 +76,12 @@ class WhatsappSingle extends Component
 
         WhatsappMessage::create([
             'user_id' => $user->id,
+            'whatsapp_session_id' => $this->sessionId,
             'recipient' => $this->phone,
             'message' => $this->message,
             'status' => 'pending',
             'message_type' => 'text',
+            'send_speed' => $this->sendSpeed,
         ]);
 
         $user->decrement('whatsapp_credits', 1);

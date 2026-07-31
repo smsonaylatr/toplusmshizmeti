@@ -106,10 +106,12 @@ class WhatsappBulk extends Component
 
             WhatsappMessage::create([
                 'user_id' => $user->id,
+                'whatsapp_session_id' => $this->sessionId,
                 'recipient' => $phone,
                 'message' => $msg,
                 'status' => 'pending',
                 'message_type' => 'text',
+                'send_speed' => $this->sendSpeed,
             ]);
         }
 
