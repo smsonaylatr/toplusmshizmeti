@@ -17,12 +17,13 @@ class PaymentApprovals extends Component
     public string $search = '';
 
     // Onay modalı
-    public ?int   $approveId    = null;
-    public string $approveMode  = 'package'; // 'package' | 'custom'
-    public int    $packageIndex = -1;         // seçili paket indeksi
+    public ?int   $approveId     = null;
+    public string $approveMode   = 'package'; // 'package' | 'custom'
+    public string $approveType   = 'sms';     // 'sms' | 'whatsapp'
+    public int    $packageIndex  = -1;         // seçili paket indeksi
     public int    $customCredits = 0;         // manuel kredi
 
-    // Paket listesi (PaymentController::PACKAGES ile senkron)
+    // Paket listesi (SMS için)
     public const PACKAGES = [
         ['name' => '1.000 SMS',   'sms' => 1000,   'price' => 350.00],
         ['name' => '2.500 SMS',   'sms' => 2500,   'price' => 750.00],
@@ -32,6 +33,14 @@ class PaymentApprovals extends Component
         ['name' => '50.000 SMS',  'sms' => 50000,  'price' => 7500.00],
         ['name' => '100.000 SMS', 'sms' => 100000, 'price' => 13000.00],
     ];
+
+    public function getActivePackages(): array
+    {
+        if ($this->approveType === 'whatsapp') {
+            return \App\Livewire\WhatsappPricing::PACKAGES;
+        }
+        return self::PACKAGES;
+    }
 
     /**
      * Onay modali aç — tutara en yakın paketi otomatik seç.
@@ -43,6 +52,7 @@ class PaymentApprovals extends Component
         $this->customCredits = 0;
 
         $payment = PaymentNotification::find($id);
+        $this->approveType   = $payment->credit_type ?? 'sms';
         $this->packageIndex  = $this->suggestPackage((float) ($payment->amount ?? 0));
     }
 
@@ -51,10 +61,10 @@ class PaymentApprovals extends Component
      */
     private function suggestPackage(float $amount): int
     {
-        // KDV dahil fiyat hesapla ve en yakın paketi bul
         $best = -1;
         $min  = PHP_INT_MAX;
-        foreach (self::PACKAGES as $i => $pkg) {
+        $packages = $this->getActivePackages();
+        foreach ($packages as $i => $pkg) {
             $totalWithVat = round($pkg['price'] * 1.2, 2);
             $diff = abs($amount - $totalWithVat);
             if ($diff < $min) {
@@ -66,37 +76,41 @@ class PaymentApprovals extends Component
     }
 
     /**
-     * Ödemeyi onayla ve SMS yükle.
+     * Ödemeyi onayla ve SMS/WhatsApp yükle.
      */
     public function approve(): void
     {
         if (! $this->approveId) return;
 
         $payment = PaymentNotification::with('user')->findOrFail($this->approveId);
+        $type = $payment->credit_type ?? 'sms';
+        $creditField = $type === 'whatsapp' ? 'whatsapp_credits' : 'sms_credits';
+        $creditLabel = $type === 'whatsapp' ? 'WhatsApp Kredisi' : 'SMS';
 
         if ($this->approveMode === 'package' && $this->packageIndex >= 0) {
-            $pkg     = self::PACKAGES[$this->packageIndex];
-            $credits = $pkg['sms'];
-            $label   = $pkg['name'];
+            $packages = $this->getActivePackages();
+            $pkg      = $packages[$this->packageIndex];
+            $credits  = $type === 'whatsapp' ? $pkg['credits'] : $pkg['sms'];
+            $label    = $pkg['name'];
         } else {
             $this->validate(['customCredits' => 'required|integer|min:1'], [
-                'customCredits.min' => 'En az 1 SMS giriniz.',
+                'customCredits.min' => "En az 1 {$creditLabel} giriniz.",
             ]);
             $credits = (int) $this->customCredits;
-            $label   = number_format($credits) . ' SMS (Manuel)';
+            $label   = number_format($credits) . " {$creditLabel} (Manuel)";
         }
 
         $payment->update([
-            'status'   => 'approved',
+            'status'           => 'approved',
             'approved_credits' => $credits,
         ]);
 
         $user = User::findOrFail($payment->user_id);
-        $user->increment('sms_credits', $credits);
+        $user->increment($creditField, $credits);
 
         CreditLog::record(
-            $user->id, 'sms', 'add', $credits,
-            $user->fresh()->sms_credits,
+            $user->id, $type, 'add', $credits,
+            $user->fresh()->{$creditField},
             "Havale onayı: {$payment->bank} — {$payment->amount} ₺ → {$label}",
             (string) $payment->id
         );
@@ -109,7 +123,7 @@ class PaymentApprovals extends Component
         ]);
 
         $this->approveId = null;
-        session()->flash('success', "Ödeme onaylandı. {$credits} SMS kredisi yüklendi.");
+        session()->flash('success', "Ödeme onaylandı. {$credits} {$creditLabel} yüklendi.");
     }
 
     /**

@@ -86,10 +86,14 @@
                         </td>
                         <td class="text-right">
                             <span class="font-bold text-[14px]" style="color: var(--admin-text-primary);">{{ number_format($p->amount, 2, ',', '.') }} ₺</span>
+                            <div class="text-[10px] uppercase {{ ($p->credit_type ?? 'sms') === 'whatsapp' ? 'text-green-500' : 'text-blue-500' }} font-bold">
+                                {{ ($p->credit_type ?? 'sms') === 'whatsapp' ? 'WhatsApp' : 'SMS' }}
+                            </div>
                             @php
                                 // Tutara göre en yakın paketi bul
                                 $suggested = null; $minDiff = PHP_INT_MAX;
-                                foreach(\App\Livewire\Admin\PaymentApprovals::PACKAGES as $pkg) {
+                                $packagesList = ($p->credit_type ?? 'sms') === 'whatsapp' ? \App\Livewire\WhatsappPricing::PACKAGES : \App\Livewire\Admin\PaymentApprovals::PACKAGES;
+                                foreach($packagesList as $pkg) {
                                     $diff = abs($p->amount - round($pkg['price'] * 1.2, 2));
                                     if ($diff < $minDiff) { $minDiff = $diff; $suggested = $pkg; }
                                 }
@@ -199,7 +203,7 @@
                 {{-- Paket Seçimi --}}
                 @if($approveMode === 'package')
                     <div class="px-6 py-4 space-y-2">
-                        @foreach($this::PACKAGES as $i => $pkg)
+                        @foreach($this->getActivePackages() as $i => $pkg)
                             @php $vatPrice = round($pkg['price'] * 1.2, 2); @endphp
                             <label wire:click="$set('packageIndex', {{ $i }})"
                                    class="flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all"
@@ -224,11 +228,10 @@
                 @else
                     {{-- Manuel Kredi --}}
                     <div class="px-6 py-6">
-                        <label class="text-[12px] font-medium mb-1.5 block" style="color: var(--admin-text-secondary);">Yüklenecek SMS Kredisi</label>
+                        <label class="text-[12px] font-medium mb-1.5 block" style="color: var(--admin-text-secondary);">Yüklenecek {{ $approveType === 'whatsapp' ? 'WhatsApp Kredisi' : 'SMS Kredisi' }}</label>
                         <input wire:model="customCredits" type="number" min="1"
                                class="admin-input" placeholder="ör: 5000">
                         @error('customCredits') <p class="text-[11px] text-red-400 mt-1">{{ $message }}</p> @enderror
-                        <p class="text-[11px] mt-2" style="color: var(--admin-text-muted);">Tutara göre öneri: {{ $pm ? number_format(round($pm->amount * 10)) : '—' }} SMS (1 TL = 10 SMS)</p>
                     </div>
                 @endif
 
@@ -245,7 +248,7 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
-                        <span wire:loading.remove wire:target="approve">Onayla ve SMS Yükle</span>
+                        <span wire:loading.remove wire:target="approve">Onayla ve Yükle</span>
                         <span wire:loading wire:target="approve">Yükleniyor...</span>
                     </button>
                 </div>

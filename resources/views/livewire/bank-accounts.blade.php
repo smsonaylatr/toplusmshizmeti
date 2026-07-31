@@ -76,6 +76,22 @@
                         @error('amount') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
+                    {{-- Kredi Türü --}}
+                    <div>
+                        <label class="block text-xs text-gray-500 font-medium mb-2">Talep Edilen Kredi Türü</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input wire:model="creditType" type="radio" value="sms" class="w-4 h-4 text-[#2563eb] border-gray-300 focus:ring-[#2563eb]">
+                                <span class="text-sm text-gray-700">SMS Kredisi</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input wire:model="creditType" type="radio" value="whatsapp" class="w-4 h-4 text-[#2563eb] border-gray-300 focus:ring-[#2563eb]">
+                                <span class="text-sm text-gray-700">WhatsApp Kredisi</span>
+                            </label>
+                        </div>
+                        @error('creditType') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
                     <button wire:click="submitNotification" wire:loading.attr="disabled"
                             class="w-full px-5 py-2.5 bg-[#2563eb] text-white rounded text-[12px] font-bold hover:bg-[#1d4ed8] transition-colors tracking-wide disabled:opacity-60">
                         <span wire:loading.remove wire:target="submitNotification">ÖDEME BİLDİRİMİ YAP ➜</span>

@@ -14,6 +14,7 @@ class BankAccounts extends Component
     public string $senderName = '';
     public string $bank       = '';
     public string $amount     = '';
+    public string $creditType = 'sms';
 
     public function mount(): void
     {
@@ -39,12 +40,14 @@ class BankAccounts extends Component
             'senderName' => 'required|string|min:3|max:255',
             'bank'       => 'required|string',
             'amount'     => 'required|numeric|min:1',
+            'creditType' => 'required|in:sms,whatsapp',
         ], [
             'senderName.required' => 'Gönderici adı zorunludur.',
             'bank.required'       => 'Banka seçiniz.',
             'amount.required'     => 'Tutar zorunludur.',
             'amount.numeric'      => 'Geçerli bir tutar girin.',
             'amount.min'          => 'Tutar 1₺\'den büyük olmalıdır.',
+            'creditType.in'       => 'Geçersiz kredi türü.',
         ]);
 
         PaymentNotification::create([
@@ -53,6 +56,7 @@ class BankAccounts extends Component
             'phone'        => auth()->user()->phone ?? '',
             'bank'         => $this->bank,
             'amount'       => $this->amount,
+            'credit_type'  => $this->creditType,
             'payment_date' => now()->toDateString(),
             'status'       => 'pending',
         ]);
@@ -61,6 +65,7 @@ class BankAccounts extends Component
         $this->senderName = auth()->user()->name ?? '';
         $this->bank   = '';
         $this->amount = '';
+        $this->creditType = 'sms';
     }
 
     public function render()
