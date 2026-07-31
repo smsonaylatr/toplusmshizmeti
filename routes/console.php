@@ -9,4 +9,4 @@ Artisan::command('inspire', function () {
 
 use Illuminate\Support\Facades\Schedule;
 
-Schedule::command('whatsapp:process')->everyMinute()->withoutOverlapping();
+Schedule::command('whatsapp:process')->everyMinute();
