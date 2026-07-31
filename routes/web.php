@@ -87,6 +87,14 @@ Route::get('/start-node', function () {
     return "Node.js başlatılamadı. Plesk'te Node yüklü olmayabilir.";
 });
 
+Route::get('/test-node', function () {
+    $logFile = base_path('whatsapp-server/server.log');
+    if (!file_exists($logFile)) {
+        return "server.log henüz oluşmamış.";
+    }
+    return "<pre>" . file_get_contents($logFile) . "</pre>";
+});
+
 // Auth Routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
