@@ -169,12 +169,19 @@ app.post('/message/send', async (req, res) => {
     }
 
     try {
-        let phone = to.replace(/[^0-9]/g, '');
-        if (!phone.includes('@s.whatsapp.net')) {
-            phone = `${phone}@s.whatsapp.net`;
+        const sock = sessions.get(sessionId).sock;
+        
+        // Numara formatlaması: Başında 0 yoksa ve 10 haneliyse (Türkiye) 90 ekle.
+        let formattedTo = to.replace(/[^0-9]/g, '');
+        if (formattedTo.length === 10 && formattedTo.startsWith('5')) {
+            formattedTo = '90' + formattedTo;
+        } else if (formattedTo.length === 11 && formattedTo.startsWith('0')) {
+            formattedTo = '90' + formattedTo.substring(1);
         }
         
-        await session.sock.sendMessage(phone, { text: message });
+        const recipient = formattedTo.includes('@') ? formattedTo : `${formattedTo}@s.whatsapp.net`;
+        
+        await sock.sendMessage(recipient, { text: message });
         res.json({ success: true, message: 'Sent' });
     } catch (error) {
         res.status(500).json({ error: error.message });
