@@ -9,7 +9,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class VirtualPosOrder extends Model
 {
     protected $fillable = [
-        'user_id', 'package_name', 'sms_amount',
+        'user_id',
+        'package_type',
+        'package_name', 'sms_amount',
         'price', 'vat_amount', 'total_amount',
         'status', 'merchant_oid', 'paytr_payment_amount',
         'card_last_four', 'paid_at', 'failure_message',

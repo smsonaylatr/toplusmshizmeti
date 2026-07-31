@@ -34,9 +34,14 @@
                     </div>
                 </div>
 
-                <button class="w-full py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-bold rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-300 shadow-md shadow-green-500/20">
-                    SATIN AL
-                </button>
+                <form action="{{ route('panel.payment.start') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="package_type" value="whatsapp">
+                    <input type="hidden" name="package_index" value="{{ $loop->index }}">
+                    <button type="submit" class="w-full py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-bold rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-300 shadow-md shadow-green-500/20">
+                        SATIN AL
+                    </button>
+                </form>
             </div>
         </div>
         @endforeach

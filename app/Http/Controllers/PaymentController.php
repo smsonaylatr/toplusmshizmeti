@@ -29,32 +29,56 @@ class PaymentController extends Controller
      */
     public function startPayment(Request $request)
     {
-        $request->validate(['package_index' => 'required|integer|min:0|max:6']);
+        $request->validate([
+            'package_index' => 'required|integer|min:0',
+            'package_type'  => 'nullable|string|in:sms,whatsapp'
+        ]);
 
-        $pkg = self::PACKAGES[$request->input('package_index')];
+        $type = $request->input('package_type', 'sms');
+        
+        if ($type === 'whatsapp') {
+            $packages = \App\Livewire\WhatsappPricing::PACKAGES;
+            $pkg = $packages[$request->input('package_index')];
+            // WhatsappPricing packages use 'credits' instead of 'sms', 'amount' instead of 'sms' etc?
+            // Wait, let's normalize the package data format:
+            $pkgData = [
+                'name'  => $pkg['name'],
+                'sms'   => $pkg['credits'] ?? $pkg['sms'],
+                'price' => $pkg['price']
+            ];
+        } else {
+            $packages = self::PACKAGES;
+            $pkg = $packages[$request->input('package_index')];
+            $pkgData = [
+                'name'  => $pkg['name'],
+                'sms'   => $pkg['sms'],
+                'price' => $pkg['price']
+            ];
+        }
 
         $vatRate   = 20 / 100;
-        $vatAmount = round($pkg['price'] * $vatRate, 2);
-        $total     = round($pkg['price'] + $vatAmount, 2);
+        $vatAmount = round($pkgData['price'] * $vatRate, 2);
+        $total     = round($pkgData['price'] + $vatAmount, 2);
 
         $gateway = SystemSetting::get('active_payment_gateway', env('ACTIVE_PAYMENT_GATEWAY', 'paytr'));
 
         if ($gateway === 'iyzico') {
-            return $this->startIyzicoPayment($request, $pkg, $vatAmount, $total);
+            return $this->startIyzicoPayment($request, $pkgData, $type, $vatAmount, $total);
         }
 
-        return $this->startPaytrPayment($request, $pkg, $vatAmount, $total);
+        return $this->startPaytrPayment($request, $pkgData, $type, $vatAmount, $total);
     }
 
     // ─── PayTR ────────────────────────────────────────────────────────────────
 
-    private function startPaytrPayment(Request $request, array $pkg, float $vatAmount, float $total)
+    private function startPaytrPayment(Request $request, array $pkg, string $type, float $vatAmount, float $total)
     {
         $paytr = new PayTRService();
         $merchantOid = $paytr->generateMerchantOid(auth()->id());
 
         $order = VirtualPosOrder::create([
             'user_id'              => auth()->id(),
+            'package_type'         => $type,
             'package_name'         => $pkg['name'],
             'sms_amount'           => $pkg['sms'],
             'price'                => $pkg['price'],
@@ -81,13 +105,14 @@ class PaymentController extends Controller
 
     // ─── iyzico ───────────────────────────────────────────────────────────────
 
-    private function startIyzicoPayment(Request $request, array $pkg, float $vatAmount, float $total)
+    private function startIyzicoPayment(Request $request, array $pkg, string $type, float $vatAmount, float $total)
     {
         $iyzico  = new IyzicoService();
         $orderId = $iyzico->generateOrderId(auth()->id());
 
         $order = VirtualPosOrder::create([
             'user_id'              => auth()->id(),
+            'package_type'         => $type,
             'package_name'         => $pkg['name'],
             'sms_amount'           => $pkg['sms'],
             'price'                => $pkg['price'],
@@ -202,13 +227,17 @@ class PaymentController extends Controller
 
     private function creditUser(VirtualPosOrder $order, string $logType, string $gatewayLabel): void
     {
-        $credits = (int) ($order->total_amount * 10);
+        $credits = (int) $order->sms_amount; // Use actual amount from order
         $user    = User::findOrFail($order->user_id);
-        $user->increment('sms_credits', $credits);
+        
+        $creditField = $order->package_type === 'whatsapp' ? 'whatsapp_credits' : 'sms_credits';
+        $creditName  = $order->package_type === 'whatsapp' ? 'WhatsApp' : 'SMS';
+
+        $user->increment($creditField, $credits);
 
         CreditLog::record(
             $user->id, 'in', $logType, $credits,
-            $user->fresh()->sms_credits,
+            $user->fresh()->$creditField,
             "{$gatewayLabel} ödeme: {$order->package_name} ({$order->merchant_oid})",
             $order->merchant_oid
         );
@@ -216,7 +245,7 @@ class PaymentController extends Controller
         Notification::create([
             'user_id' => $user->id,
             'title'   => 'Ödeme Onaylandı',
-            'message' => "{$order->package_name} satın alımınız tamamlandı. {$credits} SMS kredisi hesabınıza yüklendi.",
+            'message' => "{$order->package_name} satın alımınız tamamlandı. {$credits} {$creditName} kredisi hesabınıza yüklendi.",
             'type'    => 'success',
         ]);
     }
