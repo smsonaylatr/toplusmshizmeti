@@ -40,6 +40,15 @@ Route::get('/', function () {
     return redirect()->route('panel.dashboard');
 });
 
+Route::get('/test-queue', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('whatsapp:process');
+        return '<pre>Görev çalıştı. Çıktı: ' . \Illuminate\Support\Facades\Artisan::output() . '</pre>';
+    } catch (\Exception $e) {
+        return '<pre>HATA: ' . $e->getMessage() . "\n" . $e->getTraceAsString() . '</pre>';
+    }
+});
+
 // Auth Routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
