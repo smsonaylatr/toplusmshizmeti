@@ -32,7 +32,7 @@ async function startSession(sessionId) {
         return sessions.get(sessionId);
     }
 
-    const sessionDir = path.join(__dirname, 'sessions', sessionId);
+    const sessionDir = path.join(__dirname, 'wsessions', sessionId);
     const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
 
     const sock = makeWASocket({
@@ -122,7 +122,7 @@ app.post('/session/start', async (req, res) => {
 
 app.get('/session/status/:id', async (req, res) => {
     const sessionId = req.params.id;
-    const sessionDir = path.join(__dirname, 'sessions', sessionId);
+    const sessionDir = path.join(__dirname, 'wsessions', sessionId);
     
     if (sessions.has(sessionId)) {
         const session = sessions.get(sessionId);
@@ -146,7 +146,7 @@ app.post('/session/logout/:id', async (req, res) => {
         sessions.delete(sessionId);
     }
     
-    const sessionDir = path.join(__dirname, 'sessions', sessionId);
+    const sessionDir = path.join(__dirname, 'wsessions', sessionId);
     deleteFolderRecursive(sessionDir);
     
     res.json({ success: true, message: 'Logged out successfully' });
@@ -183,7 +183,7 @@ app.post('/message/send', async (req, res) => {
 
 app.listen(port, () => {
     console.log(`WhatsApp Baileys server running on http://localhost:${port}`);
-    const sessionsDir = path.join(__dirname, 'sessions');
+    const sessionsDir = path.join(__dirname, 'wsessions');
     if (!fs.existsSync(sessionsDir)) {
         fs.mkdirSync(sessionsDir);
     }
