@@ -2,6 +2,22 @@
     <h1 class="text-2xl font-bold text-gray-800 mb-1">WhatsApp Paket Fiyatları</h1>
     <div class="mb-5"><h2 class="text-base font-semibold text-green-600 border-b-2 border-green-600 inline-block pb-1">Kredi Paketleri</h2></div>
 
+    @if(session('error'))
+        <div class="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4">
+            <ul class="list-disc list-inside">
+                @foreach($errors->all() as $err)
+                    <li>{{ $err }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     {{-- Kalan Kredi --}}
     <div class="mb-5 p-4 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl text-white flex items-center justify-between shadow-lg shadow-green-500/20">
         <div class="flex items-center gap-3">
