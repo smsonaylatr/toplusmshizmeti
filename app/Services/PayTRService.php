@@ -50,9 +50,9 @@ class PayTRService
         $userIp = $request->ip();
 
         // Callback & success URL'ler
-        $callbackUrl = route('payment.callback');
-        $successUrl  = route('payment.result');
-        $failUrl     = route('payment.result');
+        $callbackUrl = route('panel.payment.callback');
+        $successUrl  = route('panel.payment.result');
+        $failUrl     = route('panel.payment.result');
         $orderId     = $order->merchant_oid;
 
         // Hash oluştur (PayTR dökümantasyonuna göre)
