@@ -49,6 +49,17 @@ Route::get('/test-queue', function () {
     }
 });
 
+Route::get('/test-logs', function () {
+    $path = storage_path('logs/laravel.log');
+    if (!file_exists($path)) {
+        return 'Log dosyası bulunamadı.';
+    }
+    // Son 50 satırı oku
+    $lines = file($path);
+    $lastLines = array_slice($lines, -50);
+    return '<pre style="background:#222;color:#0f0;padding:10px;overflow-x:auto;">' . implode("", $lastLines) . '</pre>';
+});
+
 // Auth Routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
