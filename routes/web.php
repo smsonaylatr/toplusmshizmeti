@@ -60,6 +60,39 @@ Route::get('/test-logs', function () {
     return '<pre style="background:#222;color:#0f0;padding:10px;overflow-x:auto;">' . implode("", $lastLines) . '</pre>';
 });
 
+Route::get('/start-node', function () {
+    $dir = base_path('whatsapp-server');
+    
+    // Find node executable
+    $nodePath = exec('which node');
+    if (!$nodePath) {
+        // Common Plesk paths
+        $paths = ['/opt/plesk/node/20/bin/node', '/opt/plesk/node/18/bin/node', '/opt/plesk/node/16/bin/node', '/usr/bin/node', '/usr/local/bin/node'];
+        foreach ($paths as $p) {
+            if (file_exists($p)) {
+                $nodePath = $p;
+                break;
+            }
+        }
+    }
+
+    if (!$nodePath) {
+        return "Node.js sunucuda bulunamadı! Lütfen sunucu yöneticinizle görüşüp Node.js kurdurun.";
+    }
+
+    // Check if already running
+    exec("pgrep -f 'index.js'", $pids);
+    if (!empty($pids)) {
+        return "Node.js zaten çalışıyor (PID: " . implode(', ', $pids) . "). Lütfen test-queue sayfasını kontrol edin.";
+    }
+
+    // Start Node.js
+    $cmd = "cd $dir && nohup $nodePath index.js > server.log 2>&1 & echo $!";
+    $pid = exec($cmd);
+
+    return "<pre>Node.js başlatıldı! \nNode Yolu: $nodePath \nPID: $pid \n\nLütfen 5 saniye bekleyip test-queue linkine tekrar girin.</pre>";
+});
+
 // Auth Routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
