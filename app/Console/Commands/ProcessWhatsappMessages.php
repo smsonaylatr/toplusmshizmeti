@@ -66,25 +66,27 @@ class ProcessWhatsappMessages extends Command
             if ($msg->send_speed === 'yavas') $delay = 10;
             if ($msg->send_speed === 'hizli') $delay = 2;
 
+            $sessionModel = null;
             if (!$msg->whatsapp_session_id) {
                 // Backward compatibility: If no session_id is saved, try to find default
-                $defaultSession = \App\Models\WhatsappSession::where('user_id', $msg->user_id)
+                $sessionModel = \App\Models\WhatsappSession::where('user_id', $msg->user_id)
                     ->where('is_default', true)
                     ->first();
-                
-                if (!$defaultSession) {
-                    $msg->update(['status' => 'failed']);
-                    Log::error("WhatsApp message {$msg->id} failed: No session assigned.");
-                    continue;
-                }
-                $sessionId = $defaultSession->id;
             } else {
-                $sessionId = $msg->whatsapp_session_id;
+                $sessionModel = \App\Models\WhatsappSession::find($msg->whatsapp_session_id);
             }
+
+            if (!$sessionModel) {
+                $msg->update(['status' => 'failed']);
+                Log::error("WhatsApp message {$msg->id} failed: No session assigned or found.");
+                continue;
+            }
+
+            $nodeSessionId = $sessionModel->session_id; // e.g. session_2_1785495104
 
             try {
                 $response = Http::post('http://localhost:3000/message/send', [
-                    'sessionId' => (string) $sessionId,
+                    'sessionId' => (string) $nodeSessionId,
                     'to' => $msg->recipient,
                     'message' => $msg->message,
                 ]);
