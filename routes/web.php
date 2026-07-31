@@ -67,10 +67,9 @@ Route::get('/start-node', function () {
     $paths = ['node', '/opt/plesk/node/20/bin/node', '/opt/plesk/node/18/bin/node', '/opt/plesk/node/21/bin/node', '/usr/bin/node', '/usr/local/bin/node'];
     
     // Zaten çalışıyor mu?
-    $isRunning = false;
     exec("pgrep -f 'index.js'", $pids);
     if (!empty($pids)) {
-        return "Node.js zaten çalışıyor! PID: " . implode(', ', $pids);
+        return "Node.js zaten çalışıyor! PID: " . implode(', ', $pids) . " (Yeniden başlatmak için /restart-node adresine gidin)";
     }
 
     $output = [];
@@ -85,6 +84,11 @@ Route::get('/start-node', function () {
     }
 
     return "Node.js başlatılamadı. Plesk'te Node yüklü olmayabilir.";
+});
+
+Route::get('/restart-node', function () {
+    exec("pkill -f 'index.js'");
+    return "<pre>Node.js sunucusu kapatıldı. Lütfen /start-node adresine giderek tekrar başlatın.</pre>";
 });
 
 Route::get('/test-node', function () {
