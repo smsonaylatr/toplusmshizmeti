@@ -39,6 +39,27 @@ class ProcessWhatsappMessages extends Command
 
         $this->info("Processing {$messages->count()} WhatsApp messages.");
 
+        // Kökten Çözüm: Node.js kapalıysa otomatik ayağa kaldır!
+        try {
+            Http::timeout(2)->get('http://localhost:3000');
+        } catch (\Exception $e) {
+            if (str_contains($e->getMessage(), 'Connection refused')) {
+                $this->info("Node.js sunucusu kapalı. Otomatik başlatılıyor...");
+                $dir = base_path('whatsapp-server');
+                $paths = ['node', '/opt/plesk/node/20/bin/node', '/opt/plesk/node/18/bin/node', '/opt/plesk/node/21/bin/node', '/usr/bin/node', '/usr/local/bin/node'];
+                
+                foreach ($paths as $nodePath) {
+                    $cmd = "cd $dir && $nodePath $(which npm) install; nohup $nodePath index.js > server.log 2>&1 & echo $!";
+                    $pid = exec($cmd);
+                    if (is_numeric($pid) && $pid > 0) {
+                        $this->info("Node.js başarıyla başlatıldı (PID: $pid). 5 saniye bekleniyor...");
+                        sleep(5); // Sunucunun açılması için bekle
+                        break;
+                    }
+                }
+            }
+        }
+
         foreach ($messages as $msg) {
             // Speed control (yavas = 10s, orta = 5s, hizli = 2s)
             $delay = 5;
