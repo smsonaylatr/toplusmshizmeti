@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class WhatsappSession extends Model
 {
     protected $fillable = [
-        'user_id', 'phone_number', 'display_name', 'is_active', 'connected_at', 'is_default',
+        'user_id', 'phone_number', 'display_name', 'is_active', 'connected_at', 'is_default', 'session_id',
     ];
 
     protected function casts(): array
